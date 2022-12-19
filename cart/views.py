@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from store.models import Product
 from .models import Cart, CartItem
+from django.core.exceptions import ObjectDoesNotExist
 
 
 
@@ -34,9 +35,27 @@ class AddToCartPageView(View):
                 quantity = 1
             )
             cart_item.save()
-        return redirect('')
+        return redirect('cart:cart')
 
 
 class CartPageView(View):
+
+    def _cart_id(self, request):
+        cart = request.session.session_key
+        if not cart:
+            cart = request.session.create()
+        return cart
+
     def get(self, request, *args, **kwargs):
+        total = 0
+        cart_items = 0
+        quantity = 0
+        try:
+            cart = Cart.objects.get(cart_id=self._cart_id(request))
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+            for cart_item in cart_items:
+                total += (cart_item.product.price * cart_item.quantity)
+                quantity += cart_item.quantity
+        except ObjectDoesNotExist:
+            pass
         return render(request, 'cart/cart.html')
