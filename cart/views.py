@@ -3,6 +3,7 @@ from django.views import View
 from store.models import Product
 from .models import Cart, CartItem
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
 
 
 
@@ -48,7 +49,7 @@ class CartPageView(View):
 
     def get(self, request, *args, **kwargs):
         total = 0
-        cart_items = 0
+        cart_items = None
         quantity = 0
         try:
             cart = Cart.objects.get(cart_id=self._cart_id(request))
@@ -58,4 +59,11 @@ class CartPageView(View):
                 quantity += cart_item.quantity
         except ObjectDoesNotExist:
             pass
-        return render(request, 'cart/cart.html')
+        context = {
+            'cart_items': cart_items,
+            'total': total,
+            'quantity': total
+        }
+        return HttpResponse(cart_items.product)
+
+        # return render(request, 'cart/cart.html')
