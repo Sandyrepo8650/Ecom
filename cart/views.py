@@ -1,10 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from store.models import Product
 from .models import Cart, CartItem
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse
-
 
 
 class AddToCartPageView(View):
@@ -39,8 +37,42 @@ class AddToCartPageView(View):
         return redirect('cart:cart')
 
 
-class CartPageView(View):
+class RemoveCart(View):
+    def _cart_id(self, request):
+        cart = request.session.session_key
+        if not cart:
+            cart = request.session.create()
+        return cart
 
+    def get(self, request, product_id, *args, **kwargs):
+        product = Product.objects.get(id=product_id)
+        cart = get_object_or_404(Cart, cart_id=self._cart_id(request))
+        cart_item = CartItem.objects.get(product=product, cart=cart)
+        
+        if cart_item.quantity > 1:
+            cart_item.quantity -= 1
+            cart_item.save()
+        else:
+            cart_item.delete()
+        return redirect('cart:cart')
+
+
+class RemoveCartItem(View):
+    def _cart_id(self, request):
+        cart = request.session.session_key
+        if not cart:
+            cart = request.session.create()
+        return cart
+
+    def get(self, request, product_id, *args, **kwargs):
+        cart = get_object_or_404(Cart, cart_id = self._cart_id(request))
+        product = Product.objects.get(id=product_id)
+        cart_item = CartItem.objects.get(product=product, cart=cart)
+        cart_item.delete()
+        return redirect('cart:cart')
+
+
+class CartPageView(View):
     def _cart_id(self, request):
         cart = request.session.session_key
         if not cart:
@@ -57,13 +89,17 @@ class CartPageView(View):
             for cart_item in cart_items:
                 total += (cart_item.product.price * cart_item.quantity)
                 quantity += cart_item.quantity
+            total_with_tax = (total * 0.18)
+            total_cost = (total + total_with_tax)
         except ObjectDoesNotExist:
             pass
         context = {
             'cart_items': cart_items,
             'total': total,
-            'quantity': total
+            'quantity': total,
+            'total_with_tax': total_with_tax,
+            'total_cost': total_cost
         }
-        return HttpResponse(cart_items.product)
+        # return HttpResponse(product_title)
 
-        # return render(request, 'cart/cart.html')
+        return render(request, 'cart/cart.html', context)

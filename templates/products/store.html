@@ -132,7 +132,7 @@
 								<div class="fix-height">
 									<a href="{% url 'store:product-detail' product.slug %}" class="title">{{ product.title|truncatechars:25 }}</a>
 									<div class="price-wrap mt-2">
-										<span class="price">Rs.{{ product.price }}.00</span>
+										<span class="price">Rs.{{ product.price|floatformat:2 }}</span>
 										<!-- <del class="price-old">$1980</del> -->
 									</div> <!-- price-wrap.// -->
 								</div>

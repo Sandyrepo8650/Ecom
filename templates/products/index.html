@@ -29,7 +29,7 @@
 					</a>
 					<figcaption class="info-wrap">
 						<a href="{% url 'store:product-detail' product.slug %}" class="title">{{ product.title|truncatechars:25 }}</a>
-						<div class="price mt-1">Rs.{{ product.price }}.00</div>
+						<div class="price mt-1">Rs.{{ product.price|floatformat:2 }}</div>
 						<!-- price-wrap.// -->
 					</figcaption>
 				</div>
