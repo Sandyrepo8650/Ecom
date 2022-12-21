@@ -4,19 +4,17 @@ from store.models import Product
 from .models import Cart, CartItem
 from django.core.exceptions import ObjectDoesNotExist
 
+def _cart_id(request):
+    cart = request.session.session_key
+    if not cart:
+        cart = request.session.create()
+    return cart
 
 class AddToCartPageView(View):
-
-    def _cart_id(self, request):
-        cart = request.session.session_key
-        if not cart:
-            cart = request.session.create()
-        return cart
-
     def get(self, request, product_id, *args, **kwargs):
         product = Product.objects.get(id=product_id)
         try:
-            cart = Cart.objects.get(cart_id = self._cart_id(request))
+            cart = Cart.objects.get(cart_id = _cart_id(request))
         except Cart.DoesNotExist:
             cart = Cart.objects.create(
                 cart_id = self._cart_id(request)   
@@ -38,15 +36,9 @@ class AddToCartPageView(View):
 
 
 class RemoveCart(View):
-    def _cart_id(self, request):
-        cart = request.session.session_key
-        if not cart:
-            cart = request.session.create()
-        return cart
-
     def get(self, request, product_id, *args, **kwargs):
         product = Product.objects.get(id=product_id)
-        cart = get_object_or_404(Cart, cart_id=self._cart_id(request))
+        cart = get_object_or_404(Cart, cart_id=_cart_id(request))
         cart_item = CartItem.objects.get(product=product, cart=cart)
         
         if cart_item.quantity > 1:
@@ -58,14 +50,8 @@ class RemoveCart(View):
 
 
 class RemoveCartItem(View):
-    def _cart_id(self, request):
-        cart = request.session.session_key
-        if not cart:
-            cart = request.session.create()
-        return cart
-
     def get(self, request, product_id, *args, **kwargs):
-        cart = get_object_or_404(Cart, cart_id = self._cart_id(request))
+        cart = get_object_or_404(Cart, cart_id = _cart_id(request))
         product = Product.objects.get(id=product_id)
         cart_item = CartItem.objects.get(product=product, cart=cart)
         cart_item.delete()
@@ -73,18 +59,12 @@ class RemoveCartItem(View):
 
 
 class CartPageView(View):
-    def _cart_id(self, request):
-        cart = request.session.session_key
-        if not cart:
-            cart = request.session.create()
-        return cart
-
     def get(self, request, *args, **kwargs):
         total = 0
         cart_items = None
         quantity = 0
         try:
-            cart = Cart.objects.get(cart_id=self._cart_id(request))
+            cart = Cart.objects.get(cart_id=_cart_id(request))
             cart_items = CartItem.objects.filter(cart=cart, is_active=True)
             for cart_item in cart_items:
                 total += (cart_item.product.price * cart_item.quantity)
