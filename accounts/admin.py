@@ -6,6 +6,7 @@ from .models import User
 class UserAdmin(BaseUserAdmin):
     list_display = ['email', 'first_name', 'last_login', 'joined_date', 'is_active', 'admin', 'superadmin']
     list_filter = ['admin', 'superadmin']
+    list_display_links = ['email', 'first_name']
     filter_horizontal = ()
     fieldsets = (
         (None, {

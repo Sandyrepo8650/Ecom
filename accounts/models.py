@@ -20,6 +20,7 @@ class UserManager(BaseUserManager):
             email = email,
             password = password
         )
+        user.is_active = True
         user.admin = True
         user.superadmin = True
         user.save(using=self._db)
@@ -34,7 +35,7 @@ class User(AbstractBaseUser):
     phone_number = models.CharField(max_length=50)
 
     # required fields
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     admin = models.BooleanField(default=False)
     superadmin = models.BooleanField(default=False)
     joined_date = models.DateTimeField(auto_now_add=True)

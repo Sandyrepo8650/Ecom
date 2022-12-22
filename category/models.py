@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 
 class Category(models.Model):
@@ -14,5 +15,10 @@ class Category(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def get_url(self):
+        return reverse("store:product_by_category", kwargs={"slug": self.slug})
+    
 
     
