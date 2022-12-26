@@ -4,11 +4,15 @@ from store.models import Product
 from .models import Cart, CartItem
 from django.core.exceptions import ObjectDoesNotExist
 
+
 def _cart_id(request):
     cart = request.session.session_key
+    # print(cart)
     if not cart:
         cart = request.session.create()
+        print(cart)
     return cart
+
 
 class AddToCartPageView(View):
     def get(self, request, product_id, *args, **kwargs):
@@ -17,10 +21,10 @@ class AddToCartPageView(View):
             cart = Cart.objects.get(cart_id = _cart_id(request))
         except Cart.DoesNotExist:
             cart = Cart.objects.create(
-                cart_id = self._cart_id(request)   
+                cart_id = _cart_id(request)   
             )
             cart.save()
-
+        print(cart)
         try:
             cart_item = CartItem.objects.get(product=product, cart=cart)
             cart_item.quantity += 1
@@ -81,5 +85,4 @@ class CartPageView(View):
             'total_cost': total_cost
         }
         # return HttpResponse(product_title)
-
         return render(request, 'cart/cart.html', context)
