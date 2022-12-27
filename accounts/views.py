@@ -112,6 +112,20 @@ class ForgotPasswordPageView(View):
         email = request.POST['email']
         user = User.objects.filter(email=email).exists()
         if user:
+
+            # email sending
+            current_site = get_current_site(request)
+            mail_subject = 'Please Activate your account'
+            message = render_to_string('accounts/forgot_password_email.html', {
+                'user': user,
+                'domin': current_site,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': default_token_generator.make_token(user),
+            })
+
+            to_email = email
+            send_email = EmailMessage(mail_subject, message, to=[to_email])
+            send_email.send()
             return redirect('accounts:resetpassword')
         else:
             messages.success(request, 'User does not exists, Please enter a vaild email address')
@@ -119,13 +133,22 @@ class ForgotPasswordPageView(View):
 
 
 class ResetPasswordPageView(View):
-    def get(self, request, *args, **kwargs):
-        context = {}
-        return render(request, 'accounts/resetpassword.html', context)
+    def get(self, request, uidb64, token, *args, **kwargs):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        if user is not None and default_token_generator.check_token(user, token):
+            request.session['uid'] = uid
+            messages.success(request, 'Please reset your password')
+            return redirect('accounts:resetpassword')
+        else:
+            messages.success(request, 'Invalid activation link')
+            return render(request, 'accounts/resetpassword.html')
     
     def post(self, request, *args, **kwargs):
         password = request.POST['password']
         password1 = request.POST['password1']
         if password is not None and password != password1:
-            print(password)
-            exit()
+            pass
