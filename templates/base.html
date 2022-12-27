@@ -150,7 +150,16 @@
 			</svg>
 			{% for message in messages %}
 			<div>
-				{{ message }}
+				{% if message.success %}
+				<div class="alert alert-primary" role="alert">
+					{{ message }}
+				  </div>
+				{% endif %}
+				{% if message.error %}
+				<div class="alert alert-danger" role="alert">
+					{{ message }}
+				  </div>
+				{% endif %}
 			</div>
 			{% endfor %}
 		</div>

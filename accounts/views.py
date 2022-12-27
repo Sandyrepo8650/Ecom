@@ -110,9 +110,12 @@ class ForgotPasswordPageView(View):
 
     def post(self, request, *args, **kwargs):
         email = request.POST['email']
-        user = User.objects.filter(email=email).exists()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            messages.error(request, 'Please Enter a vaild email address')
+            return redirect('accounts:forgotpassword')
         if user:
-
             # email sending
             current_site = get_current_site(request)
             mail_subject = 'Please Activate your account'
@@ -126,9 +129,9 @@ class ForgotPasswordPageView(View):
             to_email = email
             send_email = EmailMessage(mail_subject, message, to=[to_email])
             send_email.send()
-            return redirect('accounts:resetpassword')
+            return redirect('accounts:forgotpassword')
         else:
-            messages.success(request, 'User does not exists, Please enter a vaild email address')
+            messages.error(request, 'User does not exists, Please enter a vaild email address')
             return redirect('accounts:forgotpassword')
 
 
@@ -142,13 +145,23 @@ class ResetPasswordPageView(View):
         if user is not None and default_token_generator.check_token(user, token):
             request.session['uid'] = uid
             messages.success(request, 'Please reset your password')
-            return redirect('accounts:resetpassword')
+            # return redirect('accounts:resetpassword', kwargs={'uidb64': uidb64, 'token': token})
+            return render(request, 'accounts/resetpassword.html')
         else:
             messages.success(request, 'Invalid activation link')
             return render(request, 'accounts/resetpassword.html')
     
-    def post(self, request, *args, **kwargs):
+    def post(self, request, uidb64, token, *args, **kwargs):
+        uid = urlsafe_base64_decode(uidb64).decode
         password = request.POST['password']
         password1 = request.POST['password1']
-        if password is not None and password != password1:
-            pass
+        if password is not None and password == password1:
+            uid = request.session['uid']
+            user = User.objects.get(pk=uid)
+            user.set_password(password)
+            user.save()
+            messages.success(request, 'Password Reset Successfully.')
+            return redirect('accounts:login')
+        else:
+            messages.success(request, 'Both Password should match.')
+            return render(request, 'accounts/resetpassword.html')
