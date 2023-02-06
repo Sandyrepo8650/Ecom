@@ -8,7 +8,8 @@ from category.models import Category
 
 class HomePageView(View):
     def get(self, request, *args, **kwargs):
-        products = Product.objects.all().order_by('-created_date')[:8]
+        # print(dir(request))
+        products = Product.objects.all()[:8]
         context = {'products': products}
         return render(request, 'products/index.html', context)
 
@@ -20,10 +21,10 @@ class StorePageView(View):
         if slug != None:
             # category = Category.objects.get(slug=slug)
             category = get_object_or_404(Category, slug=slug)
-            products = Product.objects.filter(category=category, is_available=True).order_by('-created_date')
+            products = Product.objects.filter(category=category, is_available=True)
             total_products = products.count()
         else:
-            products = Product.objects.filter(is_available=True).order_by('-created_date')
+            products = Product.objects.filter(is_available=True)
             total_products = products.count()
         paginator = Paginator(products, 6)
         page_number = request.GET.get('page')
@@ -58,3 +59,8 @@ class SearchPageView(View):
             'total': total_products
         }
         return render(request, 'products/store.html', context)
+
+class DashboardPageView(View):
+    def get(self, request, *args, **kwargs):
+        context = {}
+        return render(request, 'products/dashboard.html', context)

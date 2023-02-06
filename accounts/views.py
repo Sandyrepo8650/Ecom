@@ -3,9 +3,10 @@ from django.views import View
 from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-# from .models import User
+from cart.models import Cart, CartItem
+
 from .forms import UserModelForm, UserLoginForm
-from django.http import HttpResponse
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django.core.mail import EmailMessage
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -13,6 +14,10 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
+from cart.views import _cart_id
+
+import requests
+
 
 User = get_user_model()
 
@@ -69,18 +74,42 @@ class UserLoginPageView(View):
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
             user = authenticate(request, username=email, password=password)
-            
             if user is not None:
-                print(f'user {email}')
+                try:
+                    # print('In the try block')
+                    # print(user)
+                    cart = Cart.objects.get(cart_id=_cart_id(request))
+                    # print(cart)
+                    cart_items = CartItem.objects.filter(cart=cart).exists()
+                    # print(cart_items)
+                    if cart_items:
+                        cart_item = CartItem.objects.filter(cart=cart)
+                        for item in cart_item:
+                            item.user = user
+                            item.save()
+                except:
+                    # print('In except block')
+                    pass
+                # print(f'user {email}')
                 login(request, user=user)
                 messages.success(request, f'{email} Successfully logged in.')
+                url = request.META.get('HTTP_REFERER')
+                try:
+                    query = requests.utils.urlparse(url).query
+                    params = dict(x.split('=') for x in query.split('&'))
+                    if 'next' in params:
+                        nextPage = params['next']
+                        return redirect(nextPage)
+                except:
+                    return redirect()
                 return redirect('store:home')
             else:
                 print('User is none')
 
 
 
-class UserLogoutPageView(View):
+class UserLogoutPageView(LoginRequiredMixin, View):
+    login_url = 'accounts:login'
     def get(self, request, *args, **kwargs):
         logout(request)
         return redirect('accounts:login')
@@ -165,3 +194,5 @@ class ResetPasswordPageView(View):
         else:
             messages.success(request, 'Both Password should match.')
             return render(request, 'accounts/resetpassword.html')
+
+
